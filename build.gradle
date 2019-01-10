@@ -52,5 +52,15 @@ task helloWorldJob(type: BootRunTask) {
 		main = project.ext.mainClassName
 	}
 
-	args = ["--spring.batch.job.names=helloWorldJob"]
+	args = ["--spring.batch.job.names=helloWorldJob", "job=helloWorldJob"]
+}
+
+task failingHelloWorldJob(type: BootRunTask) {
+	group = "application"
+	doFirst {
+		classpath = sourceSets.main.runtimeClasspath
+		main = project.ext.mainClassName
+	}
+
+	args = ["--spring.batch.job.names=failingHelloWorldJob"]
 }
