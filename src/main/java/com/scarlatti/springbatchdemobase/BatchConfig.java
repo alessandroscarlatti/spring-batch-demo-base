@@ -37,28 +37,6 @@ public class BatchConfig {
         return helloWorldJob;
     }
 
-    @Bean
-    public Job failingHelloWorldJob(FailingHelloWorldTasklet failingHelloWorldTasklet, HelloWorldTasklet helloWorldTasklet) {
-        Step failingHelloWorldStep = stepBuilderFactory
-            .get("failingHelloWorldStep")
-            .tasklet(failingHelloWorldTasklet)
-            .build();
-
-        Step helloWorldStep = stepBuilderFactory
-            .get("helloWorldStep")
-            .tasklet(helloWorldTasklet)
-            .build();
-
-        Job failingHelloWorldJob = jobBuilderFactory
-            .get("failingHelloWorldJob")
-            .incrementer(new FailingHelloWorldJobJobParametersIncrementer())
-            .start(failingHelloWorldStep)
-            .next(helloWorldStep)
-            .build();
-
-        return failingHelloWorldJob;
-    }
-
     private static class FailingHelloWorldJobJobParametersIncrementer implements JobParametersIncrementer {
         @Override
         public JobParameters getNext(JobParameters parameters) {
