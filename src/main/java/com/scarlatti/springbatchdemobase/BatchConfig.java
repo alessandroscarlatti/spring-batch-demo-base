@@ -7,6 +7,9 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 /**
  * @author Alessandro Scarlatti
  * @since Wednesday, 1/9/2019
@@ -30,21 +33,28 @@ public class BatchConfig {
 
         Job helloWorldJob = jobBuilderFactory
             .get("helloWorldJob")
-            .incrementer(new RunIdIncrementer())
+            .incrementer(new FailingHelloWorldJobJobParametersIncrementer())
             .start(helloWorldStep)
             .build();
 
         return helloWorldJob;
     }
 
-    private static class FailingHelloWorldJobJobParametersIncrementer implements JobParametersIncrementer {
+    private static class FailingHelloWorldJobJobParametersIncrementer extends RunIdIncrementer {
         @Override
         public JobParameters getNext(JobParameters parameters) {
+            super.getNext(parameters);
             JobParameters jobParameters = (parameters == null) ? new JobParameters() : parameters;
 
-            jobParameters = new JobParametersBuilder(jobParameters)
-                .addString("jobName", "FAILING_JOB", true)
-                .toJobParameters();
+            try {
+                jobParameters = new JobParametersBuilder(jobParameters)
+                    .addString("hostname", InetAddress.getLocalHost().getHostName(), false)
+                    .toJobParameters();
+            } catch (UnknownHostException e) {
+                jobParameters = new JobParametersBuilder(jobParameters)
+                    .addString("hostname", null, false)
+                    .toJobParameters();
+            }
             RunIdIncrementer runIdIncrementer = new RunIdIncrementer();
 
             return runIdIncrementer.getNext(jobParameters);

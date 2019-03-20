@@ -52,5 +52,5 @@ task helloWorldJob(type: BootRunTask) {
 		main = project.ext.mainClassName
 	}
 
-	args = ["--spring.batch.job.names=helloWorldJob", "job=helloWorldJob"]
+	args = ["--spring.batch.job.names=helloWorldJob"]
 }

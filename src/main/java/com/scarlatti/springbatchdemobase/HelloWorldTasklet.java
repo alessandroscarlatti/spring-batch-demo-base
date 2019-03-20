@@ -22,6 +22,7 @@ public class HelloWorldTasklet implements Tasklet {
 
     private static final Logger log = LoggerFactory.getLogger(HelloWorldTasklet.class);
     private NamedParameterJdbcTemplate jdbcTemplate;
+    private int count;
 
     public HelloWorldTasklet(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -29,23 +30,15 @@ public class HelloWorldTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        log.info("Hello World");
 
-        long jobId = chunkContext
-            .getStepContext()
-            .getStepExecution()
-            .getJobExecution()
-            .getJobId();
+        log.info("count: " + count);
 
-        int strangeWidgetsFound = Math.abs(new Random(new Date().getTime()).nextInt());
-
-        // save how many strange widgets we found
-        MapSqlParameterSource params = new MapSqlParameterSource()
-            .addValue("batchId", jobId)
-            .addValue("strangeWidgetsFound", strangeWidgetsFound);
-
-        jdbcTemplate.update("INSERT INTO STRANGE_WIDGETS_FOUND (BATCH_ID, WIDGETS_FOUND) VALUES(:batchId, :strangeWidgetsFound)", params);
-
-        return RepeatStatus.FINISHED;
+        if (count < 5) {
+            chunkContext.getStepContext().getStepExecution().addFailureException(new RuntimeException("oh no!"));
+            count++;
+            return RepeatStatus.CONTINUABLE;
+        }
+        else
+            return RepeatStatus.FINISHED;
     }
 }
