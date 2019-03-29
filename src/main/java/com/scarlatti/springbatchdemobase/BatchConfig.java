@@ -3,10 +3,15 @@ package com.scarlatti.springbatchdemobase;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.flow.Flow;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.skip.AlwaysSkipItemSkipPolicy;
 import org.springframework.batch.core.step.skip.CompositeSkipPolicy;
 import org.springframework.batch.core.step.skip.ExceptionClassifierSkipPolicy;
+import org.springframework.batch.core.step.tasklet.CallableTaskletAdapter;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,23 +32,28 @@ public class BatchConfig {
         this.stepBuilderFactory = stepBuilderFactory;
     }
 
+    private Job nestedJob() {
+        Step step = stepBuilderFactory.get("nestedStep")
+            .tasklet((contribution, chunkContext) -> {
+                System.out.println("BatchConfig.nestedJob() ");
+                return RepeatStatus.FINISHED;
+            })
+            .build();
+
+        return jobBuilderFactory.get("nestedJob")
+            .start(step)
+            .build();
+    }
+
     @Bean
     public Job helloWorldJob() {
-        Step helloWorldStep = stepBuilderFactory
-            .get("eggCookingStep")
-            .<Egg, Egg>chunk(1)
-            .reader(new EggReader())
-            .processor(new EggProcessor())
-            .writer(new EggWriter())
-            .faultTolerant()
-            .skipPolicy(new AlwaysSkipItemSkipPolicy())
-            .listener(new EggCookingStepListener())
+        Step step = stepBuilderFactory.get("helloWorldStep")
+            .job(nestedJob())
             .build();
 
         Job eggCookingJob = jobBuilderFactory
             .get("helloWorldJob")
-            .incrementer(new FailingHelloWorldJobJobParametersIncrementer())
-            .start(helloWorldStep)
+            .start(step)
             .build();
 
         return eggCookingJob;
