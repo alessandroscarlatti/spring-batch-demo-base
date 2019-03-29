@@ -29,6 +29,7 @@ public class BatchConfig {
         Step helloWorldStep = stepBuilderFactory
             .get("helloWorldStep")
             .tasklet(helloWorldTasklet)
+            .listener(new FailingStepListener())
             .build();
 
         Job helloWorldJob = jobBuilderFactory
