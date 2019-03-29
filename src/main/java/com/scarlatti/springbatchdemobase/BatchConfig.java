@@ -4,6 +4,9 @@ import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.step.skip.AlwaysSkipItemSkipPolicy;
+import org.springframework.batch.core.step.skip.CompositeSkipPolicy;
+import org.springframework.batch.core.step.skip.ExceptionClassifierSkipPolicy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,20 +28,25 @@ public class BatchConfig {
     }
 
     @Bean
-    public Job helloWorldJob(HelloWorldTasklet helloWorldTasklet) {
+    public Job helloWorldJob() {
         Step helloWorldStep = stepBuilderFactory
-            .get("helloWorldStep")
-            .tasklet(helloWorldTasklet)
-            .listener(new FailingStepListener())
+            .get("eggCookingStep")
+            .<Egg, Egg>chunk(1)
+            .reader(new EggReader())
+            .processor(new EggProcessor())
+            .writer(new EggWriter())
+            .faultTolerant()
+            .skipPolicy(new AlwaysSkipItemSkipPolicy())
+            .listener(new EggCookingStepListener())
             .build();
 
-        Job helloWorldJob = jobBuilderFactory
+        Job eggCookingJob = jobBuilderFactory
             .get("helloWorldJob")
             .incrementer(new FailingHelloWorldJobJobParametersIncrementer())
             .start(helloWorldStep)
             .build();
 
-        return helloWorldJob;
+        return eggCookingJob;
     }
 
     private static class FailingHelloWorldJobJobParametersIncrementer extends RunIdIncrementer {
